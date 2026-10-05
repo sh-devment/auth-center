@@ -43,7 +43,7 @@ jobs:
           MINIAPP_DIRECT_REDIRECT: ${{ vars.MINIAPP_DIRECT_REDIRECT }}
           APP_TOKENS: ${{ secrets.APP_TOKENS }}
           DIRECT_REDIRECT: ${{ vars.DIRECT_REDIRECT }}
-          GOOGLE_CLIENT_ID: ${{ vars.GOOGLE_CLIENT_ID }}
+          GOOGLE_CLIENT_ID: ${{ secrets.GOOGLE_CLIENT_ID }}
           GOOGLE_CLIENT_SECRET: ${{ secrets.GOOGLE_CLIENT_SECRET }}
           GOOGLE_CALLBACK_URL: ${{ vars.GOOGLE_CALLBACK_URL }}
         run: ./bin/deploy.sh
