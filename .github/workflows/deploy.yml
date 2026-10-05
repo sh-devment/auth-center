@@ -1,0 +1,49 @@
+name: Deploy
+
+on:
+  workflow_dispatch:
+
+concurrency:
+  group: production
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    name: Deploy ${{ matrix.region }}
+    runs-on: [self-hosted, "production-${{ matrix.region }}"]
+    environment: production-${{ matrix.region }}
+
+    strategy:
+      fail-fast: false
+      matrix:
+        region: [com, ru]
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Deploy
+        env:
+          # Имя приложения: repo-level variable, задаётся вручную (обязательно).
+          APP: ${{ vars.APP }}
+          # Какие переменные записать в $APP.env (всё ниже в этом блоке).
+          ENV_KEYS: >-
+            REGION PORT BOT_TOKEN BOT_USERNAME MINIAPP_SHORT_NAME
+            MINIAPP_DIRECT_REDIRECT APP_TOKENS DIRECT_REDIRECT
+            GOOGLE_CLIENT_ID GOOGLE_CLIENT_SECRET GOOGLE_CALLBACK_URL
+
+          # Регион наследуется из matrix — отдельно заводить не нужно.
+          # Приложению он не нужен (всё зональное — в переменных ниже),
+          # пишется в $APP.env для сверки при траблшутинге.
+          REGION: ${{ matrix.region }}
+          PORT: ${{ vars.PORT }}
+          BOT_TOKEN: ${{ secrets.BOT_TOKEN }}
+          BOT_USERNAME: ${{ vars.BOT_USERNAME }}
+          MINIAPP_SHORT_NAME: ${{ vars.MINIAPP_SHORT_NAME }}
+          MINIAPP_DIRECT_REDIRECT: ${{ vars.MINIAPP_DIRECT_REDIRECT }}
+          APP_TOKENS: ${{ secrets.APP_TOKENS }}
+          DIRECT_REDIRECT: ${{ vars.DIRECT_REDIRECT }}
+          GOOGLE_CLIENT_ID: ${{ vars.GOOGLE_CLIENT_ID }}
+          GOOGLE_CLIENT_SECRET: ${{ secrets.GOOGLE_CLIENT_SECRET }}
+          GOOGLE_CALLBACK_URL: ${{ vars.GOOGLE_CALLBACK_URL }}
+        run: ./bin/deploy.sh
