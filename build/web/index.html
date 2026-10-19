@@ -83,7 +83,7 @@
   <!-- popup: a click on the backdrop counts as "ok". `hidden` keeps it out of
        sight even under a stale style.css; script.js drops it on first open. -->
   <div class="popup" id="popup" hidden onclick="if (event.target === this) closePopup()">
-    <div class="popup__card" role="alertdialog" aria-modal="true" aria-describedby="popup-text">
+    <div class="popup__card" id="popup-card" tabindex="-1" role="alertdialog" aria-modal="true" aria-describedby="popup-text">
       <div class="popup__text" id="popup-text">{{.Text.Unavailable}}</div>
       <button class="action-btn" id="popup-ok" onclick="closePopup()">{{.Text.OK}}</button>
     </div>

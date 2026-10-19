@@ -414,6 +414,9 @@ body::before {
 
 .popup.open .popup__card { transform: none; }
 
+/* focused only to move focus into the dialog — not an interactive target */
+.popup__card:focus { outline: none; }
+
 .popup__text {
   text-align: center;
   color: var(--ink-read);

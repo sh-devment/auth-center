@@ -45,7 +45,9 @@ function openPopup(opener) {
   el.hidden = false;
   el.offsetWidth; // commit the closed state so the fade-in runs
   el.classList.add('open');
-  document.getElementById('popup-ok').focus();
+  // Focus the card, not the button: Safari draws the focus ring on a button
+  // focused from script, so the first popup came up with "ok" outlined.
+  document.getElementById('popup-card').focus();
 }
 
 function closePopup() {
