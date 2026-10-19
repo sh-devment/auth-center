@@ -41,7 +41,10 @@ let popupOpener = null;
 
 function openPopup(opener) {
   popupOpener = opener;
-  document.getElementById('popup').classList.add('open');
+  const el = document.getElementById('popup');
+  el.hidden = false;
+  el.offsetWidth; // commit the closed state so the fade-in runs
+  el.classList.add('open');
   document.getElementById('popup-ok').focus();
 }
 

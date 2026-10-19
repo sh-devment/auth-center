@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>{{.Text.Title}}</title>
   <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
-  <link rel="stylesheet" href="/style.css" />
+  <link rel="stylesheet" href="/style.css?v={{.Build}}" />
   <script>
     window.REDIRECT_URL = {{.RedirectURL}};
     window.TELEGRAM     = {{.Telegram}};
@@ -80,14 +80,15 @@
 
   </div>
 
-  <!-- popup: a click on the backdrop counts as "ok" -->
-  <div class="popup" id="popup" onclick="if (event.target === this) closePopup()">
+  <!-- popup: a click on the backdrop counts as "ok". `hidden` keeps it out of
+       sight even under a stale style.css; script.js drops it on first open. -->
+  <div class="popup" id="popup" hidden onclick="if (event.target === this) closePopup()">
     <div class="popup__card" role="alertdialog" aria-modal="true" aria-describedby="popup-text">
       <div class="popup__text" id="popup-text">{{.Text.Unavailable}}</div>
       <button class="action-btn" id="popup-ok" onclick="closePopup()">{{.Text.OK}}</button>
     </div>
   </div>
 
-  <script src="/script.js"></script>
+  <script src="/script.js?v={{.Build}}"></script>
 </body>
 </html>

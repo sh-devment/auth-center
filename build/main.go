@@ -111,9 +111,11 @@ func handleIndex(w http.ResponseWriter, r *http.Request) {
 	rdJSON, _ := json.Marshal(redirectURL)
 	indexTmpl.Execute(w, struct { //nolint:errcheck
 		RedirectURL template.JS
+		Build       string // ?v= on style.css / script.js: a deploy busts the browser cache
 		*regionDef
 	}{
 		RedirectURL: template.JS(rdJSON),
+		Build:       buildTime,
 		regionDef:   region,
 	})
 }
