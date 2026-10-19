@@ -1,17 +1,21 @@
 <!DOCTYPE html>
-<html lang="ru" data-theme="dark">
+<html lang="{{.Lang}}" data-theme="dark">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>auth-center</title>
+  <title>{{.Text.Title}}</title>
   <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
   <link rel="stylesheet" href="/style.css" />
-  <script>window.REDIRECT_URL = {{.RedirectURL}};</script>
+  <script>
+    window.REDIRECT_URL = {{.RedirectURL}};
+    window.TELEGRAM     = {{.Telegram}};
+    window.TEXT         = {{.Text.JS}};
+  </script>
 </head>
 <body>
   <div class="card">
 
-    <div class="card-title">Войти через:</div>
+    <div class="card-title">{{.Text.SignInWith}}</div>
 
     <div class="tiles">
 
@@ -21,7 +25,7 @@
             <path d="M12 11h8.533c.044.385.067.78.067 1.184 0 2.734-.98 5.036-2.678 6.6C16.32 20.272 14.3 21 12 21c-4.97 0-9-4.03-9-9s4.03-9 9-9c2.43 0 4.63.964 6.243 2.528l-2.658 2.658C14.564 7.214 13.348 6.75 12 6.75c-2.9 0-5.25 2.35-5.25 5.25s2.35 5.25 5.25 5.25c2.188 0 3.954-1.223 4.773-3H12v-3z"/>
           </svg>
         </span>
-        google
+        {{.Text.TileGoogle}}
       </button>
 
       <button class="tile" id="tile-tg" onclick="selectMethod('tg')">
@@ -31,7 +35,7 @@
             <polygon points="22 2 15 22 11 13 2 9 22 2"/>
           </svg>
         </span>
-        tg
+        {{.Text.TileTelegram}}
       </button>
 
       <button class="tile" id="tile-solana" onclick="selectMethod('solana')">
@@ -42,7 +46,7 @@
             <path d="M19.5 17H6.5L4 19.5h13l2.5-2.5z"/>
           </svg>
         </span>
-        solana
+        {{.Text.TileSolana}}
       </button>
 
     </div>
@@ -55,25 +59,33 @@
         <div class="qr-container">
           <img id="qr-img" src="" alt="" />
         </div>
-        <a id="open-btn" href="#" target="_blank" class="action-btn">open in telegram</a>
+        <a id="open-btn" href="#" target="_blank" class="action-btn">{{.Text.OpenInTelegram}}</a>
       </div>
-      <button class="action-btn" id="tg-refresh" onclick="startSession()">refresh</button>
+      <button class="action-btn" id="tg-refresh" onclick="startSession()">{{.Text.Refresh}}</button>
     </div>
 
     <!-- solana -->
     <div class="section" id="section-solana">
-      <button class="action-btn" id="solana-btn" onclick="connectWallet()">connect wallet</button>
+      <button class="action-btn" id="solana-btn" onclick="connectWallet()">{{.Text.ConnectWallet}}</button>
       <div class="no-wallet" id="no-wallet">
-        no wallet detected —
+        {{.Text.NoWallet}}
         <a href="https://phantom.app" target="_blank">phantom</a> /
         <a href="https://solflare.com" target="_blank">solflare</a>
       </div>
-      <a class="action-btn" id="phantom-link" href="#" target="_blank" style="display:none;margin-top:8px">open in phantom</a>
+      <a class="action-btn" id="phantom-link" href="#" target="_blank" style="display:none;margin-top:8px">{{.Text.OpenInPhantom}}</a>
     </div>
 
     <!-- result -->
     <div class="result" id="result"></div>
 
+  </div>
+
+  <!-- popup: a click on the backdrop counts as "ok" -->
+  <div class="popup" id="popup" onclick="if (event.target === this) closePopup()">
+    <div class="popup__card" role="alertdialog" aria-modal="true" aria-describedby="popup-text">
+      <div class="popup__text" id="popup-text">{{.Text.Unavailable}}</div>
+      <button class="action-btn" id="popup-ok" onclick="closePopup()">{{.Text.OK}}</button>
+    </div>
   </div>
 
   <script src="/script.js"></script>

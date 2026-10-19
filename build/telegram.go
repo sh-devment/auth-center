@@ -113,6 +113,13 @@ func handleQRSession(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// The page never calls this in a region without Telegram — the tile shows
+	// a popup instead — so this is the server side of the same rule.
+	if !region.Telegram {
+		jsonErr(w, "telegram login not available in this region", http.StatusForbidden)
+		return
+	}
+
 	cleanSessions()
 	var body struct {
 		Redirect string `json:"redirect"`

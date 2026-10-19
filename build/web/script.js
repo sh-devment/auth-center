@@ -3,6 +3,12 @@
 let activeMethod = null;
 
 function selectMethod(method) {
+  // the region has no Telegram login — explain and leave the page as it was
+  if (method === 'tg' && !window.TELEGRAM) {
+    openPopup(document.getElementById('tile-tg'));
+    return;
+  }
+
   const prev = activeMethod;
 
   document.querySelectorAll('.tile').forEach(t => t.classList.remove('active'));
@@ -28,6 +34,26 @@ function selectMethod(method) {
 
   if (method === 'tg') startSession();
 }
+
+// ── popup ─────────────────────────────────────────────────────────────────
+
+let popupOpener = null;
+
+function openPopup(opener) {
+  popupOpener = opener;
+  document.getElementById('popup').classList.add('open');
+  document.getElementById('popup-ok').focus();
+}
+
+function closePopup() {
+  document.getElementById('popup').classList.remove('open');
+  if (popupOpener) popupOpener.focus();
+  popupOpener = null;
+}
+
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape' && popupOpener) closePopup();
+});
 
 // ── shared ────────────────────────────────────────────────────────────────
 
@@ -183,7 +209,7 @@ async function signWithInjected(injected, btn) {
   await injected.wallet.connect();
   const publicKey = injected.wallet.publicKey.toBase58();
 
-  btn.textContent = 'signing...';
+  btn.textContent = TEXT.signing;
   const { nonce, token, error } = await fetchNonce();
   if (error) throw new Error(error);
 
@@ -234,7 +260,7 @@ async function signWithStandard(wallet, btn) {
   if (!account) throw new Error('wallet connected but no account');
   const publicKey = toBase58(account.publicKey);
 
-  btn.textContent = 'signing...';
+  btn.textContent = TEXT.signing;
   const { nonce, token, error } = await fetchNonce();
   if (error) throw new Error(error);
 
@@ -273,7 +299,7 @@ async function signWithMWA(btn) {
   const nonceBase64 = btoa(String.fromCharCode(...nonceBytes));
 
   return await _mwaTransact(async (wallet) => {
-    btn.textContent = 'opening wallet...';
+    btn.textContent = TEXT.openingWallet;
 
     const authResult = await wallet.authorize({
       chain: 'solana:mainnet',
@@ -298,7 +324,7 @@ async function signWithMWA(btn) {
       publicKey = toBase58(pkBytes);
     }
 
-    btn.textContent = 'signing...';
+    btn.textContent = TEXT.signing;
 
     const { signed_payloads } = await wallet.signMessages({
       addresses: [rawAddress],
@@ -340,7 +366,7 @@ async function connectWallet() {
   phantomEl.style.display = 'none';
   btn.classList.remove('invalid');
   btn.disabled    = true;
-  btn.textContent = 'connecting...';
+  btn.textContent = TEXT.connecting;
 
   try {
     let result = null;
@@ -353,7 +379,7 @@ async function connectWallet() {
 
     // 2. wallet standard
     if (!result) {
-      btn.textContent = 'looking for wallet...';
+      btn.textContent = TEXT.lookingForWallet;
       const stdWallet = await findStandardWallet();
       if (stdWallet) result = await signWithStandard(stdWallet, btn);
     }
@@ -367,7 +393,7 @@ async function connectWallet() {
     if (!result) {
       btn.classList.add('invalid');
       btn.disabled    = false;
-      btn.textContent = 'connect wallet';
+      btn.textContent = TEXT.connectWallet;
       IS_MOBILE ? showPhantomLink() : noWallet.classList.add('visible');
       return;
     }
@@ -392,7 +418,7 @@ async function connectWallet() {
       }
       lockAll();
       showResult('success', `solana (${result.walletName})\n${data.public_key}`);
-      btn.textContent = 'connected';
+      btn.textContent = TEXT.connected;
     } else {
       throw new Error(data.error || 'auth failed');
     }
@@ -400,6 +426,6 @@ async function connectWallet() {
   } catch (err) {
     showResult('error', err.message);
     btn.disabled    = false;
-    btn.textContent = 'connect wallet';
+    btn.textContent = TEXT.connectWallet;
   }
 }

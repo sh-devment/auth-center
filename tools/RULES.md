@@ -68,8 +68,7 @@ GitHub configuration:
 - per environment (`production-ru`, `production-com`), variables: `PORT`, `BOT_USERNAME`,
   `MINIAPP_SHORT_NAME`, `MINIAPP_DIRECT_REDIRECT`, `DIRECT_REDIRECT`, `GOOGLE_CLIENT_ID`,
   `GOOGLE_CALLBACK_URL`; secrets: `BOT_TOKEN`, `APP_TOKENS`, `GOOGLE_CLIENT_SECRET`
-- `REGION` comes from the matrix. The code does not read it — every zone difference is an env
-  value — it is written to the env file for troubleshooting only.
+- `REGION` comes from the matrix and selects the region profile (see *Regions* below).
 
 Every key in `ENV_KEYS` is required by `deploy.sh`; an empty one fails the deploy before anything
 is installed. To make a key optional, drop it from `ENV_KEYS`.
@@ -77,6 +76,7 @@ is installed. To make a key optional, drop it from `ENV_KEYS`.
 ## Environment variables
 
 - `PORT` — defaults to `8886`
+- `REGION` — `ru` | `com`; empty falls back to `ru` (local dev), anything else is fatal at startup
 - `BOT_TOKEN`, `BOT_USERNAME` — Telegram bot. The token is not used to call Telegram; it derives
   the shared secret with auth-miniapp
 - `MINIAPP_SHORT_NAME` — mini app short name on the same bot. The entire Telegram login goes through it
@@ -94,6 +94,17 @@ The app loads `.env` via `godotenv.Load()` at startup (dev only; prod uses the g
 in-memory maps with mutexes and TTLs. No database. Lazy cleanup on access.
 `sessionTTL = 5 min`, `codeTTL = 60 sec`. Codes are deleted immediately after `/exchange`.
 A restart (every deploy) drops in-flight logins — acceptable at a 5-minute horizon.
+
+**Regions.** One binary serves both zones; `REGION` picks a profile at startup
+(`build/region.go`, values in `build/region-ru.go` and `build/region-com.go`). A profile holds the
+page language and every user-facing string of `web/index.html` (`Text`, rendered by the template)
+and of `web/script.js` (`Text.JS`, rendered into the page as `window.TEXT`), plus which login
+methods the zone offers. Adding a string means adding it to both files — an empty one in either
+profile stops the process at startup. Technical text (logs, JSON errors) stays English and out of
+the profiles. Infrastructure differences (URLs, tokens) stay in env.
+
+`ru` has no Telegram login: the tile opens a popup saying the method is unavailable, and
+`POST /qr-session` answers `403`. The mini app front door (`POST /miniapp/home`) is not gated.
 
 **Web assets** are embedded via `//go:embed web` — `build/web/` is baked in at compile time.
 

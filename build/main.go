@@ -109,8 +109,12 @@ func handleIndex(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	rdJSON, _ := json.Marshal(redirectURL)
-	indexTmpl.Execute(w, struct{ RedirectURL template.JS }{ //nolint:errcheck
+	indexTmpl.Execute(w, struct { //nolint:errcheck
+		RedirectURL template.JS
+		*regionDef
+	}{
 		RedirectURL: template.JS(rdJSON),
+		regionDef:   region,
 	})
 }
 
@@ -124,6 +128,8 @@ func main() {
 
 	log.SetFlags(log.Ldate | log.Ltime | log.LUTC)
 	godotenv.Load() //nolint:errcheck
+
+	initRegion()
 
 	directRedirect = os.Getenv("DIRECT_REDIRECT")
 	miniappHomeRedirect = os.Getenv("MINIAPP_DIRECT_REDIRECT")

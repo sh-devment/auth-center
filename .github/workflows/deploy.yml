@@ -33,8 +33,9 @@ jobs:
             GOOGLE_CLIENT_ID GOOGLE_CLIENT_SECRET GOOGLE_CALLBACK_URL
 
           # Регион наследуется из matrix — отдельно заводить не нужно.
-          # Приложению он не нужен (всё зональное — в переменных ниже),
-          # пишется в $APP.env для сверки при траблшутинге.
+          # По нему бинарь выбирает язык страницы и доступные способы входа
+          # (build/region-ru.go / region-com.go); незнакомое значение валит
+          # старт, health check и откатывает деплой.
           REGION: ${{ matrix.region }}
           PORT: ${{ vars.PORT }}
           BOT_TOKEN: ${{ secrets.BOT_TOKEN }}
