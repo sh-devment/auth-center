@@ -8,15 +8,12 @@ import (
 )
 
 // regionDef is everything that differs between the ru and com deployments
-// apart from env config: the language of the login page and which login
-// methods the zone offers. The values live in region-ru.go and region-com.go.
-// Technical text (logs, JSON error bodies) is English in both and stays out.
+// apart from env config: the language of the login page. Which login methods
+// a zone offers is config too (METHODS, see methods.go). The values live in
+// region-ru.go and region-com.go. Technical text (logs, JSON error bodies) is
+// English in both and stays out.
 type regionDef struct {
 	Lang string // <html lang>
-
-	// Telegram login is offered. Off: the tile only explains, in a popup, that
-	// the method is unavailable, and POST /qr-session refuses with 403.
-	Telegram bool
 
 	Text pageText
 }
@@ -28,6 +25,7 @@ type pageText struct {
 	SignInWith string // heading above the tiles
 
 	TileGoogle   string
+	TileYandex   string
 	TileTelegram string
 	TileSolana   string
 
@@ -37,10 +35,6 @@ type pageText struct {
 	ConnectWallet string
 	NoWallet      string // before the wallet links: "<NoWallet> phantom / solflare"
 	OpenInPhantom string
-
-	// popup on a login method the region does not offer
-	Unavailable string
-	OK          string
 
 	JS jsText // strings set by script.js
 }
@@ -87,7 +81,7 @@ func initRegion() {
 		log.Fatalf("unknown REGION %q (want ru or com)", regionName)
 	}
 	region = r
-	log.Printf("region: %s (lang=%s telegram=%t)", regionName, region.Lang, region.Telegram)
+	log.Printf("region: %s (lang=%s)", regionName, region.Lang)
 }
 
 // checkFilled walks structs and fails on the first empty string.

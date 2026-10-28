@@ -1,14 +1,14 @@
 package main
 
 var regionRU = regionDef{
-	Lang:     "ru",
-	Telegram: false,
+	Lang: "ru",
 
 	Text: pageText{
 		Title:      "auth-center",
 		SignInWith: "Войти через:",
 
 		TileGoogle:   "google",
+		TileYandex:   "яндекс",
 		TileTelegram: "tg",
 		TileSolana:   "solana",
 
@@ -18,9 +18,6 @@ var regionRU = regionDef{
 		ConnectWallet: "подключить кошелёк",
 		NoWallet:      "кошелёк не найден —",
 		OpenInPhantom: "открыть в phantom",
-
-		Unavailable: "К сожалению, эта функция недоступна в вашем регионе",
-		OK:          "ок",
 
 		JS: jsText{
 			ConnectWallet:    "подключить кошелёк",

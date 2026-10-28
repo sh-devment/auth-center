@@ -3,23 +3,17 @@
 let activeMethod = null;
 
 function selectMethod(method) {
-  // the region has no Telegram login — explain and leave the page as it was
-  if (method === 'tg' && !window.TELEGRAM) {
-    openPopup(document.getElementById('tile-tg'));
-    return;
-  }
-
   const prev = activeMethod;
 
   document.querySelectorAll('.tile').forEach(t => t.classList.remove('active'));
   document.querySelectorAll('.section').forEach(s => s.classList.remove('open'));
 
-  // google has no section — go straight to the oauth redirect.
+  // oauth providers have no section — go straight to the oauth redirect.
   // must return before the section lookup below, there is no #section-google.
-  if (method === 'google') {
-    document.getElementById('tile-google').classList.add('active');
+  if (method === 'google' || method === 'yandex') {
+    document.getElementById(`tile-${method}`).classList.add('active');
     const r = window.REDIRECT_URL || '';
-    window.location.href = '/google/login' + (r ? '?redirect=' + encodeURIComponent(r) : '');
+    window.location.href = `/${method}/login` + (r ? '?redirect=' + encodeURIComponent(r) : '');
     return;
   }
 
@@ -34,31 +28,6 @@ function selectMethod(method) {
 
   if (method === 'tg') startSession();
 }
-
-// ── popup ─────────────────────────────────────────────────────────────────
-
-let popupOpener = null;
-
-function openPopup(opener) {
-  popupOpener = opener;
-  const el = document.getElementById('popup');
-  el.hidden = false;
-  el.offsetWidth; // commit the closed state so the fade-in runs
-  el.classList.add('open');
-  // Focus the card, not the button: Safari draws the focus ring on a button
-  // focused from script, so the first popup came up with "ok" outlined.
-  document.getElementById('popup-card').focus();
-}
-
-function closePopup() {
-  document.getElementById('popup').classList.remove('open');
-  if (popupOpener) popupOpener.focus();
-  popupOpener = null;
-}
-
-document.addEventListener('keydown', e => {
-  if (e.key === 'Escape' && popupOpener) closePopup();
-});
 
 // ── shared ────────────────────────────────────────────────────────────────
 

@@ -8,7 +8,6 @@
   <link rel="stylesheet" href="/style.css?v={{.Build}}" />
   <script>
     window.REDIRECT_URL = {{.RedirectURL}};
-    window.TELEGRAM     = {{.Telegram}};
     window.TEXT         = {{.Text.JS}};
   </script>
 </head>
@@ -19,6 +18,7 @@
 
     <div class="tiles">
 
+      {{if .Methods.google}}
       <button class="tile" id="tile-google" onclick="selectMethod('google')">
         <span class="tile__icon">
           <svg width="44" height="44" viewBox="0 0 24 24" fill="currentColor">
@@ -27,7 +27,21 @@
         </span>
         {{.Text.TileGoogle}}
       </button>
+      {{end}}
 
+      {{if .Methods.yandex}}
+      <button class="tile" id="tile-yandex" onclick="selectMethod('yandex')">
+        <span class="tile__icon">
+          <svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M15 20V4h-3a4 4 0 0 0 0 8h3"/>
+            <line x1="12" y1="12" x2="8" y2="20"/>
+          </svg>
+        </span>
+        {{.Text.TileYandex}}
+      </button>
+      {{end}}
+
+      {{if .Methods.telegram}}
       <button class="tile" id="tile-tg" onclick="selectMethod('tg')">
         <span class="tile__icon">
           <svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
@@ -37,7 +51,9 @@
         </span>
         {{.Text.TileTelegram}}
       </button>
+      {{end}}
 
+      {{if .Methods.solana}}
       <button class="tile" id="tile-solana" onclick="selectMethod('solana')">
         <span class="tile__icon">
           <svg width="44" height="44" viewBox="0 0 24 24" fill="currentColor">
@@ -48,10 +64,11 @@
         </span>
         {{.Text.TileSolana}}
       </button>
+      {{end}}
 
     </div>
 
-    <!-- google has no section — the tile redirects straight to /google/login -->
+    <!-- google and yandex have no section — the tile redirects straight to /<method>/login -->
 
     <!-- telegram -->
     <div class="section" id="section-tg">
@@ -78,15 +95,6 @@
     <!-- result -->
     <div class="result" id="result"></div>
 
-  </div>
-
-  <!-- popup: a click on the backdrop counts as "ok". `hidden` keeps it out of
-       sight even under a stale style.css; script.js drops it on first open. -->
-  <div class="popup" id="popup" hidden onclick="if (event.target === this) closePopup()">
-    <div class="popup__card" id="popup-card" tabindex="-1" role="alertdialog" aria-modal="true" aria-describedby="popup-text">
-      <div class="popup__text" id="popup-text">{{.Text.Unavailable}}</div>
-      <button class="action-btn" id="popup-ok" onclick="closePopup()">{{.Text.OK}}</button>
-    </div>
   </div>
 
   <script src="/script.js?v={{.Build}}"></script>

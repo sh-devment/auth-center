@@ -112,10 +112,12 @@ func handleIndex(w http.ResponseWriter, r *http.Request) {
 	indexTmpl.Execute(w, struct { //nolint:errcheck
 		RedirectURL template.JS
 		Build       string // ?v= on style.css / script.js: a deploy busts the browser cache
+		Methods     map[string]bool
 		*regionDef
 	}{
 		RedirectURL: template.JS(rdJSON),
 		Build:       buildTime,
+		Methods:     methods,
 		regionDef:   region,
 	})
 }
@@ -132,6 +134,7 @@ func main() {
 	godotenv.Load() //nolint:errcheck
 
 	initRegion()
+	initMethods()
 
 	directRedirect = os.Getenv("DIRECT_REDIRECT")
 	miniappHomeRedirect = os.Getenv("MINIAPP_DIRECT_REDIRECT")
@@ -146,6 +149,7 @@ func main() {
 	initTelegram()
 	initMiniapp()
 	initGoogle()
+	initYandex()
 	initTemplate()
 
 	webFS, _ := fs.Sub(webFiles, "web")
@@ -153,14 +157,16 @@ func main() {
 
 	mux := http.NewServeMux()
 	mux.HandleFunc("GET /", handleIndex)
-	mux.HandleFunc("POST /qr-session", handleQRSession)
+	mux.HandleFunc("POST /qr-session", onlyIf("telegram", handleQRSession))
 	mux.HandleFunc("GET /poll/{token}", handlePoll)
 	mux.HandleFunc("POST /miniapp/auth", handleMiniappAuth)
 	mux.HandleFunc("POST /miniapp/home", handleMiniappHome)
-	mux.HandleFunc("POST /solana/nonce", handleSolanaNonce)
-	mux.HandleFunc("POST /solana/auth", handleSolanaAuth)
-	mux.HandleFunc("GET /google/login", handleGoogleLogin)
-	mux.HandleFunc("GET /google/callback", handleGoogleCallback)
+	mux.HandleFunc("POST /solana/nonce", onlyIf("solana", handleSolanaNonce))
+	mux.HandleFunc("POST /solana/auth", onlyIf("solana", handleSolanaAuth))
+	mux.HandleFunc("GET /google/login", onlyIf("google", handleGoogleLogin))
+	mux.HandleFunc("GET /google/callback", onlyIf("google", handleGoogleCallback))
+	mux.HandleFunc("GET /yandex/login", onlyIf("yandex", handleYandexLogin))
+	mux.HandleFunc("GET /yandex/callback", onlyIf("yandex", handleYandexCallback))
 	mux.HandleFunc("POST /exchange", handleExchange)
 	mux.HandleFunc("POST /delegate", handleDelegate)
 	mux.Handle("GET /style.css", fileServer)

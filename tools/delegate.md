@@ -57,10 +57,10 @@ Request body:
 
 | Field        | Required | Notes |
 |--------------|:--------:|-------|
-| `user_id`    | **yes**  | Permanent provider id (Google `sub`, Telegram numeric id, Solana pubkey). This is the user's identity across all apps. |
+| `user_id`    | **yes**  | Permanent provider id (Google `sub`, Yandex `id`, Telegram numeric id, Solana pubkey). This is the user's identity across all apps. |
 | `app_token`  | **yes**  | App A's secret. Must be listed in auth-center's `APP_TOKENS`. |
-| `method`     | no\*     | The **real** identity provider: `google` / `telegram` / `solana`. If omitted, auth-center defaults it to `delegate`, which makes app B mislabel the provider and drop the name — **always send it**. |
-| `name`       | no       | Display name, Google style. Send for Google users. |
+| `method`     | no\*     | The **real** identity provider: `google` / `yandex` / `telegram` / `solana`. If omitted, auth-center defaults it to `delegate`, which makes app B mislabel the provider and drop the name — **always send it**. |
+| `name`       | no       | Display name, Google style. Send for Google and Yandex users. |
 | `first_name` | no       | Telegram / Solana style. |
 | `last_name`  | no       | Telegram / Solana style. |
 
@@ -68,7 +68,7 @@ Request body:
 
 Send the fields that match the original provider:
 
-- **Google user:** `method: "google"` + `name`
+- **Google / Yandex user:** `method: "google"` / `"yandex"` + `name`
 - **Telegram user:** `method: "telegram"` + `first_name` (+ `last_name`)
 - **Solana user:** `method: "solana"` (+ `first_name` if you have a label)
 
@@ -114,7 +114,7 @@ Response for a delegated user:
 }
 ```
 
-- `method` — the **true** provider (`google`/`telegram`/`solana`), carried through from app A.
+- `method` — the **true** provider (`google`/`yandex`/`telegram`/`solana`), carried through from app A.
 - `via` — `"delegate"` when the code came from `/delegate`; **absent** for first-party logins. It's a transport marker for logging/audit; apps may ignore it. Do **not** treat `via` as the provider.
 - `user` — exactly the profile fields app A forwarded, plus `id`.
 
@@ -150,7 +150,7 @@ func delegateCode(uid int64) (string, error) {
 	payload := map[string]string{
 		"user_id":   user.AuthID,   // permanent provider id
 		"app_token": appToken,
-		"method":    user.Method,   // "google" / "telegram" / "solana"
+		"method":    user.Method,   // "google" / "yandex" / "telegram" / "solana"
 	}
 	if user.Name != "" {
 		payload["name"] = user.Name

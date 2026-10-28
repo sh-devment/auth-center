@@ -7,7 +7,10 @@ build/
   main.go      — server setup, shared config, shared helpers, request logger
   telegram.go  — Telegram QR/deeplink auth (sessions store, webhook, poll)
   solana.go    — Solana wallet auth (nonce store, signature verification)
-  google.go    — Google OAuth (state store, login redirect, callback)
+  oauth.go     — OAuth state store and final redirect, shared by Google and Yandex
+  google.go    — Google OAuth (login redirect, callback)
+  yandex.go    — Yandex OAuth (login redirect, callback)
+  methods.go   — METHODS: which login methods this instance offers
   exchange.go  — one-time code store + /exchange endpoint
   delegate.go  — /delegate endpoint: trusted app issues a cross-app login code
   web/
@@ -80,7 +83,7 @@ The request logger in `main.go` covers HTTP-level logging automatically.
 | Store | TTL | Cleaned |
 |---|---|---|
 | Telegram sessions | `sessionTTL` = 5 min | on each `POST /qr-session` |
-| Google OAuth states | `sessionTTL` = 5 min | on expiry check in callback |
+| OAuth states (Google, Yandex) | `sessionTTL` = 5 min | on each `/<provider>/login` |
 | One-time codes | `codeTTL` = 60 sec | on each `POST /exchange` |
 | Solana nonces | no TTL — single use | deleted immediately on use |
 

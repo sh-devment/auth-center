@@ -16,7 +16,16 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        region: [com, ru]
+        # methods — какие способы входа включены в зоне (METHODS, build/methods.go).
+        # keys — переменные, которые нужны только этой зоне; добавляются к ENV_KEYS
+        # ниже. Включая метод, добавь сюда же его ключи и заведи их в environment.
+        include:
+          - region: com
+            methods: google,telegram,solana
+            keys: ""
+          - region: ru
+            methods: google,yandex,solana
+            keys: YANDEX_CLIENT_ID YANDEX_CLIENT_SECRET YANDEX_CALLBACK_URL
 
     steps:
       - name: Checkout
@@ -28,15 +37,17 @@ jobs:
           APP: ${{ vars.APP }}
           # Какие переменные записать в $APP.env (всё ниже в этом блоке).
           ENV_KEYS: >-
-            REGION PORT BOT_TOKEN BOT_USERNAME MINIAPP_SHORT_NAME
+            REGION METHODS PORT BOT_TOKEN BOT_USERNAME MINIAPP_SHORT_NAME
             MINIAPP_DIRECT_REDIRECT APP_TOKENS DIRECT_REDIRECT
             GOOGLE_CLIENT_ID GOOGLE_CLIENT_SECRET GOOGLE_CALLBACK_URL
+            ${{ matrix.keys }}
 
-          # Регион наследуется из matrix — отдельно заводить не нужно.
-          # По нему бинарь выбирает язык страницы и доступные способы входа
-          # (build/region-ru.go / region-com.go); незнакомое значение валит
-          # старт, health check и откатывает деплой.
+          # Регион и способы входа наследуются из matrix — отдельно заводить
+          # не нужно. REGION выбирает язык страницы (build/region-ru.go /
+          # region-com.go), METHODS — плитки и маршруты (build/methods.go);
+          # незнакомое значение валит старт, health check и откатывает деплой.
           REGION: ${{ matrix.region }}
+          METHODS: ${{ matrix.methods }}
           PORT: ${{ vars.PORT }}
           BOT_TOKEN: ${{ secrets.BOT_TOKEN }}
           BOT_USERNAME: ${{ vars.BOT_USERNAME }}
@@ -47,4 +58,8 @@ jobs:
           GOOGLE_CLIENT_ID: ${{ secrets.GOOGLE_CLIENT_ID }}
           GOOGLE_CLIENT_SECRET: ${{ secrets.GOOGLE_CLIENT_SECRET }}
           GOOGLE_CALLBACK_URL: ${{ vars.GOOGLE_CALLBACK_URL }}
+          # Пусто там, где Яндекса нет в matrix.keys: в $APP.env не попадёт.
+          YANDEX_CLIENT_ID: ${{ vars.YANDEX_CLIENT_ID }}
+          YANDEX_CLIENT_SECRET: ${{ secrets.YANDEX_CLIENT_SECRET }}
+          YANDEX_CALLBACK_URL: ${{ vars.YANDEX_CALLBACK_URL }}
         run: ./bin/deploy.sh

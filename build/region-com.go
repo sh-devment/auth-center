@@ -1,14 +1,14 @@
 package main
 
 var regionCOM = regionDef{
-	Lang:     "en",
-	Telegram: true,
+	Lang: "en",
 
 	Text: pageText{
 		Title:      "auth-center",
 		SignInWith: "Sign in with:",
 
 		TileGoogle:   "google",
+		TileYandex:   "yandex",
 		TileTelegram: "tg",
 		TileSolana:   "solana",
 
@@ -18,9 +18,6 @@ var regionCOM = regionDef{
 		ConnectWallet: "connect wallet",
 		NoWallet:      "no wallet detected —",
 		OpenInPhantom: "open in phantom",
-
-		Unavailable: "Sorry, this feature is not available in your region",
-		OK:          "ok",
 
 		JS: jsText{
 			ConnectWallet:    "connect wallet",

@@ -6,11 +6,12 @@ Project rules for **auth-center** — for humans and for Claude Code alike (the 
 ## What this is
 
 **auth-center** is a stateless, database-free centralized authentication service. It supports
-Telegram (via the auth-miniapp Mini App), Solana (wallet signature), and Google OAuth. It returns
+Telegram (via the auth-miniapp Mini App), Solana (wallet signature), Google OAuth and Yandex OAuth.
+Which of them a zone offers is set at deploy time (`METHODS`). It returns
 one-time codes (60s TTL) that client apps exchange server-to-server for user data.
 
 ```
-User → Client App → Auth Center → (Telegram / Solana / Google)
+User → Client App → Auth Center → (Telegram / Solana / Google / Yandex)
                          ↓
                    One-time Code
                          ↓
@@ -27,8 +28,9 @@ single org-level self-hosted runner per server serves every project there. The d
 ## Layout
 
 ```
-build/          # Go source (main.go, telegram.go, miniapp.go, solana.go, google.go,
-                #            exchange.go, delegate.go + web/)
+build/          # Go source (main.go, methods.go, region*.go, telegram.go, miniapp.go,
+                #            solana.go, oauth.go, google.go, yandex.go, exchange.go,
+                #            delegate.go + web/)
 bin/
   auth-center   # compiled linux/amd64 binary (committed to git)
   deploy.sh     # run by the Deploy workflow on each runner
@@ -66,17 +68,24 @@ cron: auth-center has no database.
 GitHub configuration:
 - repo variable: `APP=auth-center`
 - per environment (`production-ru`, `production-com`), variables: `PORT`, `BOT_USERNAME`,
-  `MINIAPP_SHORT_NAME`, `MINIAPP_DIRECT_REDIRECT`, `DIRECT_REDIRECT`, `GOOGLE_CLIENT_ID`,
-  `GOOGLE_CALLBACK_URL`; secrets: `BOT_TOKEN`, `APP_TOKENS`, `GOOGLE_CLIENT_SECRET`
-- `REGION` comes from the matrix and selects the region profile (see *Regions* below).
+  `MINIAPP_SHORT_NAME`, `MINIAPP_DIRECT_REDIRECT`, `DIRECT_REDIRECT`, `GOOGLE_CALLBACK_URL`;
+  secrets: `BOT_TOKEN`, `APP_TOKENS`, `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`
+- `production-ru` only: variables `YANDEX_CLIENT_ID`, `YANDEX_CALLBACK_URL`; secret
+  `YANDEX_CLIENT_SECRET`
+- `REGION` and `METHODS` come from the matrix: `com` → `google,telegram,solana`,
+  `ru` → `google,yandex,solana`. Per-zone keys go to `matrix.keys` and are appended to `ENV_KEYS`.
 
 Every key in `ENV_KEYS` is required by `deploy.sh`; an empty one fails the deploy before anything
-is installed. To make a key optional, drop it from `ENV_KEYS`.
+is installed. To make a key optional, drop it from `ENV_KEYS`; to require it in one zone only, put
+it in that zone's `matrix.keys`. Turning a method on in a zone means both: add it to `methods` and
+its keys to `keys`.
 
 ## Environment variables
 
 - `PORT` — defaults to `8886`
 - `REGION` — `ru` | `com`; empty falls back to `ru` (local dev), anything else is fatal at startup
+- `METHODS` — comma-separated login methods: `google`, `yandex`, `telegram`, `solana`. Empty turns
+  all of them on (local dev); an unknown name is fatal at startup
 - `BOT_TOKEN`, `BOT_USERNAME` — Telegram bot. The token is not used to call Telegram; it derives
   the shared secret with auth-miniapp
 - `MINIAPP_SHORT_NAME` — mini app short name on the same bot. The entire Telegram login goes through it
@@ -85,12 +94,14 @@ is installed. To make a key optional, drop it from `ENV_KEYS`.
 - `APP_TOKENS` — comma-separated secrets clients use for `/exchange` and `/delegate`
 - `DIRECT_REDIRECT` — redirect if a user opens auth-center directly without `?redirect=`
 - `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `GOOGLE_CALLBACK_URL`
+- `YANDEX_CLIENT_ID`, `YANDEX_CLIENT_SECRET`, `YANDEX_CALLBACK_URL` — app at oauth.yandex.ru,
+  scopes `login:info` + `login:email`, redirect URI `https://<host>/yandex/callback`
 
 The app loads `.env` via `godotenv.Load()` at startup (dev only; prod uses the generated env file).
 
 ## Architecture notes
 
-**Stateless design:** all state (sessions, one-time codes, nonces, Google OAuth states) lives in
+**Stateless design:** all state (sessions, one-time codes, nonces, OAuth states) lives in
 in-memory maps with mutexes and TTLs. No database. Lazy cleanup on access.
 `sessionTTL = 5 min`, `codeTTL = 60 sec`. Codes are deleted immediately after `/exchange`.
 A restart (every deploy) drops in-flight logins — acceptable at a 5-minute horizon.
@@ -98,13 +109,20 @@ A restart (every deploy) drops in-flight logins — acceptable at a 5-minute hor
 **Regions.** One binary serves both zones; `REGION` picks a profile at startup
 (`build/region.go`, values in `build/region-ru.go` and `build/region-com.go`). A profile holds the
 page language and every user-facing string of `web/index.html` (`Text`, rendered by the template)
-and of `web/script.js` (`Text.JS`, rendered into the page as `window.TEXT`), plus which login
-methods the zone offers. Adding a string means adding it to both files — an empty one in either
-profile stops the process at startup. Technical text (logs, JSON errors) stays English and out of
-the profiles. Infrastructure differences (URLs, tokens) stay in env.
+and of `web/script.js` (`Text.JS`, rendered into the page as `window.TEXT`). Adding a string means
+adding it to both files — an empty one in either profile stops the process at startup. Technical
+text (logs, JSON errors) stays English and out of the profiles. Infrastructure differences (URLs,
+tokens) stay in env.
 
-`ru` has no Telegram login: the tile opens a popup saying the method is unavailable, and
-`POST /qr-session` answers `403`. The mini app front door (`POST /miniapp/home`) is not gated.
+**Login methods** are config, not region: the binary has every provider and `METHODS`
+(`build/methods.go`) picks the ones an instance offers. A method that is off has no tile, and its
+routes (`/qr-session`, `/solana/*`, `/google/*`, `/yandex/*`) answer `403`. The mini app endpoints
+(`/miniapp/auth`, `/miniapp/home`) are not gated. `ru` runs without Telegram (blocked there) and
+with Yandex instead.
+
+**OAuth providers** (Google, Yandex) share the state store and the final redirect
+(`build/oauth.go`); each provider file only builds its authorize URL and turns the callback's code
+into a user `{id, email, name}`.
 
 **Web assets** are embedded via `//go:embed web` — `build/web/` is baked in at compile time.
 
@@ -115,7 +133,7 @@ method prefixes to avoid mux conflicts (e.g. `mux.Handle("GET /style.css", fileS
 The `app_token` is never sent to the browser.
 
 **User identity** is always the provider's permanent unique ID: Telegram numeric ID, Solana public
-key (base58), Google `sub`.
+key (base58), Google `sub`, Yandex `id`.
 
 **Telegram via auth-miniapp.** The browser tab opens a session (`POST /qr-session`), the user
 follows `https://t.me/<bot>/<app>?startapp=<flag><session token>`, and auth-miniapp verifies
@@ -172,7 +190,7 @@ APP_TOKEN=<secret>                                       # must be listed in tha
 1. Send the user to `GET $AUTH_URL/?redirect=<APP_URL>/callback`.
 2. auth-center appends `?code=<one-time-code>`; exchange it server-side:
    `POST $AUTH_INTERNAL/exchange {"code": "...", "app_token": "..."}` →
-   `{"ok": true, "method": "telegram|solana|google", "user": {"id": "..."}}`.
+   `{"ok": true, "method": "telegram|solana|google|yandex", "user": {"id": "..."}}`.
 
 `user.id` is the permanent unique ID — use it as the primary key. Code is single-use, 60s TTL.
 

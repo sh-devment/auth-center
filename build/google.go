@@ -8,9 +8,6 @@ import (
 	"net/http"
 	"net/url"
 	"os"
-	"strings"
-	"sync"
-	"time"
 )
 
 // ── config ────────────────────────────────────────────────────────────────────
@@ -30,27 +27,11 @@ func initGoogle() {
 	}
 }
 
-// ── state store ───────────────────────────────────────────────────────────────
-
-type googleState struct {
-	Redirect  string
-	CreatedAt time.Time
-}
-
-var (
-	googleStates   = make(map[string]googleState)
-	googleStatesMu sync.Mutex
-)
-
 // ── handlers ──────────────────────────────────────────────────────────────────
 
 // GET /google/login
 func handleGoogleLogin(w http.ResponseWriter, r *http.Request) {
-	redirectURL := r.URL.Query().Get("redirect")
-	state := randToken(32)
-	googleStatesMu.Lock()
-	googleStates[state] = googleState{Redirect: redirectURL, CreatedAt: time.Now()}
-	googleStatesMu.Unlock()
+	state := newOAuthState("google", r.URL.Query().Get("redirect"))
 
 	params := url.Values{
 		"client_id":     {googleClientID},
@@ -70,17 +51,9 @@ func handleGoogleCallback(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	state := r.URL.Query().Get("state")
 	authCode := r.URL.Query().Get("code")
-
-	googleStatesMu.Lock()
-	stateData, ok := googleStates[state]
-	if ok {
-		delete(googleStates, state)
-	}
-	googleStatesMu.Unlock()
-
-	if !ok || time.Since(stateData.CreatedAt) > sessionTTL {
+	redirect, ok := takeOAuthState("google", r.URL.Query().Get("state"))
+	if !ok {
 		http.Error(w, "invalid or expired state", http.StatusBadRequest)
 		return
 	}
@@ -132,19 +105,5 @@ func handleGoogleCallback(w http.ResponseWriter, r *http.Request) {
 
 	log.Printf("google sub=%s email=%s", sub, email)
 
-	if stateData.Redirect != "" {
-		oneTimeCode := newCode(user, "google")
-		sep := "?"
-		if strings.Contains(stateData.Redirect, "?") {
-			sep = "&"
-		}
-		http.Redirect(w, r, stateData.Redirect+sep+"code="+oneTimeCode, http.StatusFound)
-		return
-	}
-
-	target := directRedirect
-	if target == "" {
-		target = "/"
-	}
-	http.Redirect(w, r, target, http.StatusFound)
+	finishOAuth(w, r, redirect, user, "google")
 }

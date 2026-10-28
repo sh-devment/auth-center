@@ -15,7 +15,7 @@ func handleDelegate(w http.ResponseWriter, r *http.Request) {
 	var body struct {
 		UserID    string `json:"user_id"`
 		AppToken  string `json:"app_token"`
-		Method    string `json:"method"`     // original identity provider (google/telegram/solana)
+		Method    string `json:"method"`     // original identity provider (google/yandex/telegram/solana)
 		Name      string `json:"name"`       // display name (Google style)
 		FirstName string `json:"first_name"` // Telegram/Solana style
 		LastName  string `json:"last_name"`
