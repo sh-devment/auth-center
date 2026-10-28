@@ -59,7 +59,7 @@ jobs:
           GOOGLE_CLIENT_SECRET: ${{ secrets.GOOGLE_CLIENT_SECRET }}
           GOOGLE_CALLBACK_URL: ${{ vars.GOOGLE_CALLBACK_URL }}
           # Пусто там, где Яндекса нет в matrix.keys: в $APP.env не попадёт.
-          YANDEX_CLIENT_ID: ${{ vars.YANDEX_CLIENT_ID }}
+          YANDEX_CLIENT_ID: ${{ secrets.YANDEX_CLIENT_ID }}
           YANDEX_CLIENT_SECRET: ${{ secrets.YANDEX_CLIENT_SECRET }}
           YANDEX_CALLBACK_URL: ${{ vars.YANDEX_CALLBACK_URL }}
         run: ./bin/deploy.sh
